@@ -208,7 +208,7 @@ export default function Page() {
       } else {
         const data = await api('/api/chat', {
           method: 'POST',
-          body: JSON.stringify({ question: text, mode: 'ask', scopeModel, scopeTopic })
+          body: JSON.stringify({ question: text, mode: 'ask', scopeModel, scopeTopic, history: chat })
         }, passcode);
         setChat(c => [...c, { role: 'assistant', content: data.error || data.answer }]);
       }
