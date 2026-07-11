@@ -66,7 +66,11 @@ async function api(path, opts, passcode) {
     headers: { 'Content-Type': 'application/json', 'x-team-passcode': passcode || '', ...(opts?.headers || {}) }
   });
   if (res.status === 401) { const e = new Error('unauthorized'); e.status = 401; throw e; }
-  return res.json();
+  let data;
+  try { data = await res.json(); }
+  catch (e) { return { error: `Server returned an unexpected response (status ${res.status}). Check the Netlify function logs.` }; }
+  if (!res.ok && !data.error) data.error = `Request failed (status ${res.status}).`;
+  return data;
 }
 
 function PasscodeGate({ onUnlock }) {
