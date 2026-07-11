@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getNotes } from '../../../lib/store';
 import { checkPasscode } from '../../../lib/auth';
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3.5-flash';
 
 function scoreNote(note, words) {
   const hay = (note.title + ' ' + note.content + ' ' + note.model + ' ' + note.topic).toLowerCase();
