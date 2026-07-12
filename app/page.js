@@ -1,5 +1,9 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
+import {
+  Search, Plus, Upload, Lock, Unlock, Trash2, X, SendHorizontal,
+  MessageSquareText, PenLine, FileText, Sparkles, ChevronRight
+} from 'lucide-react';
 
 const STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
@@ -54,7 +58,13 @@ label{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;tex
 .field{margin-bottom:13px;}
 .filters{display:flex;gap:8px;margin-bottom:12px;}
 .filters select{flex:1;}
-.search-box{margin-bottom:14px;}
+.search-box{margin-bottom:14px;position:relative;}
+.search-box svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-soft);pointer-events:none;}
+.search-box input{padding-left:34px;}
+.panel h2 .h2-label{display:flex;align-items:center;gap:8px;}
+.panel h2 .h2-label svg{color:var(--ink-soft);}
+.btn svg{vertical-align:-2px;margin-right:5px;}
+.btn-icon-only svg{margin-right:0;}
 
 .note-list{display:flex;flex-direction:column;gap:9px;max-height:440px;overflow-y:auto;padding-right:2px;}
 .note-card{position:relative;border:1px solid var(--line);border-radius:8px;padding:11px 13px 11px 16px;cursor:pointer;background:#FCFBF7;
@@ -143,9 +153,7 @@ function PlateIcon({ size = 42 }) {
 function AssistantAvatar() {
   return (
     <div className="avatar">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-        <path d="M4 17h16M4 12h11M4 7h16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-      </svg>
+      <Sparkles size={12} color="#fff" />
     </div>
   );
 }
@@ -269,11 +277,12 @@ export default function Page() {
     } catch (e) { if (e.status === 401) relock(); }
   }
 
-  async function importSeed() {
+  async function importSeed(dataset) {
     setBusy(true);
     try {
-      const data = await api('/api/seed', { method: 'POST' }, passcode);
-      setChat(c => [...c, { role: 'assistant', content: data.added > 0 ? `Imported ${data.added} note(s) from the starter reference set.` : 'Starter notes are already imported.' }]);
+      const data = await api('/api/seed', { method: 'POST', body: JSON.stringify({ dataset }) }, passcode);
+      const label = dataset === 'website' ? 'public website reference set' : 'starter reference set';
+      setChat(c => [...c, { role: 'assistant', content: data.added > 0 ? `Imported ${data.added} note(s) from the ${label}.` : `The ${label} is already imported.` }]);
       loadNotes();
     } catch (e) { if (e.status === 401) relock(); }
     setBusy(false);
@@ -328,18 +337,20 @@ export default function Page() {
               <div className="sub">Caravan build notes — shared with your team</div>
             </div>
           </div>
-          <button className="btn btn-ghost btn-small" onClick={relock}>Lock</button>
+          <button className="btn btn-ghost btn-small" onClick={relock}><Lock size={13} />Lock</button>
         </div>
 
         <div className="layout">
           <div className="panel">
-            <h2>Notes
+            <h2><span className="h2-label"><FileText size={16} />Notes</span>
               <span>
-                <button className="btn btn-ghost btn-small" onClick={importSeed} disabled={busy}>Import starter set</button>{' '}
-                <button className="btn btn-primary btn-small" onClick={openNew}>+ Add note</button>
+                <button className="btn btn-ghost btn-small" onClick={() => importSeed('starter')} disabled={busy}><Upload size={13} />Import starter set</button>{' '}
+                <button className="btn btn-ghost btn-small" onClick={() => importSeed('website')} disabled={busy}><Upload size={13} />Import website data</button>{' '}
+                <button className="btn btn-primary btn-small" onClick={openNew}><Plus size={13} />Add note</button>
               </span>
             </h2>
             <div className="search-box">
+              <Search size={14} />
               <input placeholder="Search notes..." value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <div className="filters">
@@ -353,7 +364,7 @@ export default function Page() {
               </select>
             </div>
             <div className="note-list">
-              {filteredNotes.length === 0 && <div className="empty-state">No notes yet. Add one, or import the starter set.</div>}
+              {filteredNotes.length === 0 && <div className="empty-state"><FileText size={22} style={{ opacity: 0.4, marginBottom: 8 }} /><br />No notes yet. Add one, or import the starter set.</div>}
               {filteredNotes.map(n => (
                 <div className="note-card" key={n.id} onClick={() => openEdit(n)} style={{ '--accent': topicAccent(n.topic) }}>
                   <div className="title">{n.title}</div>
@@ -367,14 +378,14 @@ export default function Page() {
           </div>
 
           <div className="panel chat-panel">
-            <h2>Ask <button className="btn btn-ghost btn-small" onClick={() => setChat([])}>Clear chat</button></h2>
+            <h2><span className="h2-label"><Sparkles size={16} />Ask</span> <button className="btn btn-ghost btn-small" onClick={() => setChat([])}><X size={13} />Clear chat</button></h2>
             <div className="mode-toggle">
               <button className={`mode-btn mode-ask ${mode === 'ask' ? 'active' : ''}`} onClick={() => setMode('ask')}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <MessageSquareText size={12} />
                 Ask
               </button>
               <button className={`mode-btn mode-note ${mode === 'note' ? 'active' : ''}`} onClick={() => setMode('note')}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <PenLine size={12} />
                 Add note
               </button>
             </div>
@@ -391,7 +402,7 @@ export default function Page() {
               </div>
             )}
             <div className="chat-log" ref={chatLogRef}>
-              {chat.length === 0 && <div className="empty-state">Ask a question, or switch to "Add note" to log something new.</div>}
+              {chat.length === 0 && <div className="empty-state"><Sparkles size={22} style={{ opacity: 0.4, marginBottom: 8 }} /><br />Ask a question, or switch to "Add note" to log something new.</div>}
               {chat.map((m, i) => (
                 <div className={`msg ${m.role}`} key={i}>
                   {m.role === 'assistant' && <AssistantAvatar />}
@@ -409,7 +420,7 @@ export default function Page() {
               <textarea value={input} onChange={e => setInput(e.target.value)}
                 placeholder={mode === 'ask' ? 'Ask a question about your notes...' : 'Type the note as it comes to you...'}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} />
-              <button className="btn btn-primary" onClick={send} disabled={busy}>{mode === 'ask' ? 'Ask' : 'Save note'}</button>
+              <button className="btn btn-primary" onClick={send} disabled={busy}><SendHorizontal size={14} />{mode === 'ask' ? 'Ask' : 'Save note'}</button>
             </div>
           </div>
         </div>
@@ -426,9 +437,9 @@ export default function Page() {
             <datalist id="models">{models.map(m => <option key={m} value={m} />)}</datalist>
             <datalist id="topics">{topics.map(t => <option key={t} value={t} />)}</datalist>
             <div className="modal-actions">
-              {editing && <button className="btn btn-danger btn-small" onClick={deleteNoteForm}>Delete</button>}
-              <button className="btn btn-ghost btn-small" onClick={() => setModalOpen(false)}>Cancel</button>
-              <button className="btn btn-primary btn-small" onClick={saveNoteForm}>Save note</button>
+              {editing && <button className="btn btn-danger btn-small" onClick={deleteNoteForm}><Trash2 size={13} />Delete</button>}
+              <button className="btn btn-ghost btn-small" onClick={() => setModalOpen(false)}><X size={13} />Cancel</button>
+              <button className="btn btn-primary btn-small" onClick={saveNoteForm}><SendHorizontal size={13} />Save note</button>
             </div>
           </div>
         </div>

@@ -34,7 +34,8 @@ function buildContext(relevant) {
   let ctx = '';
   let budget = 7000;
   for (const n of relevant) {
-    const block = `### ${n.title}\nModel: ${n.model || '—'} | Topic: ${n.topic || '—'}\n${n.content}\n\n`;
+    const source = n.title.startsWith('Public Website —') ? 'PUBLIC WEBSITE DATA' : 'INTERNAL TEAM NOTES';
+    const block = `### [${source}] ${n.title}\nModel: ${n.model || '—'} | Topic: ${n.topic || '—'}\n${n.content}\n\n`;
     if (budget - block.length < 0) break;
     ctx += block;
     budget -= block.length;
@@ -113,20 +114,28 @@ Prefer reusing an existing model/topic if the input clearly matches one, otherwi
     const relevant = getRelevantNotes(notes, question, scopeModel, scopeTopic);
     const context = buildContext(relevant);
 
-    const systemPrompt = `You are a knowledgeable working assistant for a caravan drafter/planner — think of yourself as a sharp colleague who has read all their build notes, not a search box.
+    const systemPrompt = `You are a knowledgeable working assistant for a caravan drafter/planner. Your reference notes come from two distinct sources, tagged in the material below: INTERNAL TEAM NOTES (the team's own build/drafting rules) and PUBLIC WEBSITE DATA (Urban Caravans' own public marketing site — useful, but customer-facing and sometimes rounded/simplified compared to internal truth).
 
-Your reference notes for this job are below. Use them as your primary, most trustworthy source — always mention which note(s) you're drawing on when you use one.
+Structure EVERY answer using exactly these three headed sections, in this order, using this exact markdown:
 
-If the notes don't fully cover the question, don't just say "not found" — reason it through using general caravan design/drafting knowledge and good judgement, but clearly flag that this part is your own reasoning/general knowledge rather than a documented rule from their notes, so they know to double-check it.
+**1. From your notes**
+Answer using ONLY the INTERNAL TEAM NOTES material. Name the specific note title(s) you drew from. If nothing in the internal notes is relevant to this question, write: "Nothing in your team notes covers this." Keep it concise.
 
-If notes conflict with each other (e.g. an older note vs a newer one), point out the conflict, prefer whichever seems more recently updated, and flag it so they can confirm.
+**2. From your scraped public data**
+Answer using ONLY the PUBLIC WEBSITE DATA material. Name the specific note title(s) you drew from. If nothing in the public data is relevant, write: "Nothing in the public website data covers this." Keep it concise.
 
-This is a real conversation — remember what's already been discussed, handle follow-up questions naturally ("what about the Tourer?" refers back to the previous topic), and ask a quick clarifying question yourself if the request is genuinely ambiguous rather than guessing blindly.
+**3. General technical/industry input**
+Your own reasoning based on standard caravan design, manufacturing and RV industry practice — NOT drawn from either data source above. Be precise and technically accurate; if you're not confident about a specific figure or standard, say so rather than guessing a number. Keep this crisp — a few sentences or a short list, not a lecture.
 
-Keep answers concise and skimmable — this person is busy on the drafting floor. Short lists are good.
+Rules that apply across all three sections:
+- If sections 1 and 2 disagree with each other (e.g. an internal spec doesn't match the public spec), point that out explicitly, in section 1 or 2 as relevant — don't silently pick one.
+- If notes within the same source conflict (e.g. an older note vs a newer one), flag it and prefer whichever is more recently updated.
+- This is a real conversation — use prior messages for context on follow-up questions ("what about the Tourer?" refers back to what was just discussed).
+- Never skip a section — always include all three headers, even if a section is just one line saying nothing applies.
+- Be concise throughout. This person is busy on the drafting floor, not reading a report.
 
-REFERENCE NOTES:
-${context || '(no closely matching notes found for this question — rely on conversation context and general knowledge, and say so)'}`;
+REFERENCE MATERIAL:
+${context || '(no closely matching notes found in either source for this question)'}`;
 
     const historyContents = (Array.isArray(history) ? history : [])
       .slice(-12)
